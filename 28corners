@@ -1,0 +1,112 @@
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <stdio.h>
+#include <time.h>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
+using namespace cv;
+using namespace std;
+
+Mat dst_norm_scaled;
+vector<int> noveltyDetect;
+
+Mat dataOpen() {
+
+	string Destination = "C:\\Users\\Olka\\Documents\\Studia 3\\MD\\logo.jpg";
+	Mat OurImage = imread(Destination, CV_LOAD_IMAGE_COLOR);
+	if (!OurImage.data)
+	{
+		printf("No image!");
+		getchar();
+		//return -1;
+	}
+
+	return OurImage;
+}
+
+
+
+Mat cornerDetection(Mat SourceImg) {
+
+	Mat gray, dst, dst_norm;
+	Scalar colour = Scalar(147, 20, 255);
+	cvtColor(SourceImg, gray, CV_BGR2GRAY);
+	dst = Mat::zeros(SourceImg.size(), CV_32FC1);
+
+	// Detecting corners
+	cornerHarris(gray, dst, 15, 5, 0, BORDER_DEFAULT);
+
+	imshow("Harris", dst);
+	waitKey(32);
+
+	// Normalizing
+	normalize(dst, dst_norm, 0, 255, NORM_MINMAX, CV_32FC1, Mat());
+	convertScaleAbs(dst_norm, dst_norm_scaled);
+
+	imshow("dst_norm", dst_norm);
+	waitKey(32);
+
+	// Drawing a circle around corners
+	for (int j = 0; j < dst_norm.rows; j++)
+	{
+		for (int i = 0; i < dst_norm.cols; i++)
+		{
+			if ((int)dst_norm.at<float>(j, i) > 8)
+			{
+				circle(dst_norm_scaled, Point(i, j), 2, colour, 1, 8, 0);
+			}
+		}
+	}
+
+	imshow("dst_norm_circles", dst_norm_scaled);
+	waitKey(32);
+
+	return dst_norm_scaled;
+}
+
+void corners(Mat dst_norm_scaled) {
+
+	int thresh = 200;
+	Mat canny_output;
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+
+	/// Detect edges using canny and find contours
+	Canny(dst_norm_scaled, canny_output, thresh, thresh * 2, 3);
+	findContours(canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+	int corners = contours.size() / 2;
+	//cout << "corners: " << corners << endl;
+
+	if (corners == 3 || corners == 4)
+	{
+		noveltyDetect.push_back(0);
+	}
+	else
+	{
+		noveltyDetect.push_back(1);
+		cout << "The match, corners: " << corners << endl;
+	}
+}
+
+void sort() {
+
+	Mat SourceImg;
+	
+	SourceImg = dataOpen();
+	cornerDetection(SourceImg);
+	corners(dst_norm_scaled);
+
+}
+
+
+
+int main()
+{
+	sort();
+
+	waitKey(0);
+}
