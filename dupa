@@ -126,6 +126,36 @@ void write(Mat SourceImg, string txt) {
 	putText(SourceImg, txt, Point(155, 230), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 4);
 }
 
+void compare(Mat codeImg) {
+
+	int thresh = 200;
+	Mat canny_output;
+	vector<vector<Point> > contours1;
+	vector<Vec4i> hierarchy1;
+	vector<vector<Point> > contours2;
+	vector<Vec4i> hierarchy2;
+
+	/// Detect edges using canny and find contours
+	Canny(codeImg, canny_output, thresh, thresh * 2, 3);
+	findContours(canny_output, contours1, hierarchy1, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+	Canny(obrazki.at(2), canny_output, thresh, thresh * 2, 3);
+	findContours(canny_output, contours2, hierarchy2, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+	RNG rng(12345);
+	Mat drawing = Mat::zeros(canny_output.size(), CV_8UC3);
+	for (int i = 8; i< contours2.size(); i++)
+	{
+		//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+		//drawContours(drawing, contours2, i, color, 2, 8, hierarchy2, 0, Point());
+		double match;
+		match = matchShapes(contours1[i], contours2[i], 1, 0.0);
+		cout << "match: " << match << endl;
+	}
+
+	//imshow("drawing", drawing);
+}
+
 void sort() {
 
 	Mat SourceImg;
@@ -135,19 +165,19 @@ void sort() {
 	corners(dst_norm_scaled);
 	string surname;
 	string txt;
+	Mat codeImg;
 
 	for (int i = 0; i < 3; i++) {
-		Mat codeImg = SourceImg.clone();
+		codeImg = SourceImg.clone();
 		cout << "enter your surname: " << endl;
 		cin >> surname;
 		txt = code(surname);
-
-
-
 		write(codeImg, txt);
 		obrazki.push_back(codeImg);
 	}	
 
+
+	compare(codeImg);
 }
 
 
@@ -161,10 +191,6 @@ int main()
 			cout << codeData[i][j] << endl;
 		}
 	}
-
-	imshow("s", obrazki.at(0));
-	imshow("s2", obrazki.at(1));
-	imshow("s3", obrazki.at(2));
 
 	waitKey(0);
 }
