@@ -22,24 +22,17 @@ int main(int, char**)
 	{
 		Mat frame, gray, edges, bin;
 		cap >> frame; // get a new frame from camera
-
+		Mat frame2 = frame.clone();
 		Mat imgThresholded;
 
 		cvtColor(frame, imgThresholded, CV_BGR2GRAY);
 		//threshold(gray, bin, 115, 255, 0);
 		Canny(imgThresholded, edges, 100, 200, 3);		// Apply Canny edge detection on the gray image
-		imshow("bin", edges);
+		//imshow("bin", edges);
 
 		vector<vector<Point> > contours;
 		vector<Vec4i> hierarchy;
 		findContours(edges, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
-
-
-		vector<vector<Point> > contours_poly(contours.size());
-		for (int i = 0; i < contours.size(); i++)
-		{
-			approxPolyDP(contours[i], contours_poly[i], 0.1, true);
-		}
 
 		for (int i = 0; i < contours.size(); i++)
 		{
@@ -50,12 +43,9 @@ int main(int, char**)
 				//drawContours(frame, contours, i, Scalar(255, 200, 0), 2, 8, hierarchy, 0);
 				drawContours(frame, contours, i, Scalar(255, 0, 0), 2, 8, hierarchy, 0);
 			}
-			if (contours_poly.size() == 3) {
-				drawContours(frame, contours_poly, i, Scalar(0, 0, 255), 2, 8, hierarchy, 0);
-			}
 		}
 
-		imshow("edges", frame);
+		//imshow("edges", frame);
 
 
 		Mat imgHSV;
@@ -65,7 +55,7 @@ int main(int, char**)
 		Scalar hsv_h(130, 255, 255);
 		cvtColor(frame, imgHSV, CV_BGR2HSV);
 		inRange(imgHSV, hsv_l, hsv_h, imgThresholded2);
-		imshow("blue", imgThresholded2);
+		//imshow("blue", imgThresholded2);
 
 		Mat dst, cdst;
 		Canny(imgThresholded2, dst, 50, 200, 3);
@@ -75,6 +65,7 @@ int main(int, char**)
 		HoughLines(dst, lines, 1, CV_PI / 180, 100, 0, 0);
 
 		int count = 0;
+		string txt = "DETECTED";
 		for (size_t i = 0; i < lines.size(); i++)
 		{
 			
@@ -88,9 +79,12 @@ int main(int, char**)
 			pt2.y = cvRound(y0 - 1000 * (a));
 			line(cdst, pt1, pt2, Scalar(0, 0, 255), 3, CV_AA);
 			count++;
-			if (count >= 25 && count <=40) cout << "WELL DONE" << endl;
+			if (count >= 25 && count <= 40) {
+				cout << "WELL DONE" << endl;
+				putText(frame, txt, Point(132, 234), FONT_HERSHEY_TRIPLEX, 1.5, Scalar(0, 0, 255), 4);
+			}
 		}
-		imshow("linedetect", cdst);
+		imshow("linedetect", frame); //,cdst
 		cout << "count" << count << endl;
 		count = 0;
 		 
